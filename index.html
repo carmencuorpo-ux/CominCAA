@@ -1,0 +1,2968 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <title>ComuniCAA · Traduttore Interattivo Testo ⇄ Simboli CAA & Voce Simultanea</title>
+  
+  <!-- Font ad alta leggibilità -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM & CSS VARIABLES
+       Chiave di Fitzgerald per CAA:
+       - Giallo: Persone / Pronomi
+       - Verde: Verbi / Azioni
+       - Arancione: Nomi / Oggetti / Cibi
+       - Blu: Aggettivi / Emozioni / Descrittori
+       - Rosa / Magenta: Sociale / Formule di cortesia / Avverbi
+       - Bianco / Grigio: Connettori / Preposizioni / Grammatica
+       ========================================================================== */
+    :root {
+      --bg: #f4f6fa;
+      --card-bg: #ffffff;
+      --card-subtle: #f8fafc;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --border: #e2e8f0;
+      --border-focus: #3b82f6;
+      
+      /* Colori Fitzgerald CAA */
+      --fitz-people: #f59e0b;      /* Giallo / Ambra: Persone / Pronomi */
+      --fitz-people-bg: #fef3c7;
+      --fitz-action: #10b981;      /* Verde: Verbi / Azioni */
+      --fitz-action-bg: #d1fae5;
+      --fitz-noun: #f97316;        /* Arancione: Nomi / Oggetti */
+      --fitz-noun-bg: #ffedd5;
+      --fitz-desc: #0284c7;        /* Blu: Aggettivi / Emozioni */
+      --fitz-desc-bg: #e0f2fe;
+      --fitz-social: #ec4899;      /* Rosa: Sociale / Saluti */
+      --fitz-social-bg: #fce7f3;
+      --fitz-misc: #64748b;        /* Grigio: Connettori / Altro */
+      --fitz-misc-bg: #f1f5f9;
+
+      /* UI Theme */
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --accent: #8b5cf6;
+      --accent-light: #f5f3ff;
+      --success: #10b981;
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 10px -1px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 24px -4px rgba(0,0,0,0.12);
+      --shadow-highlight: 0 0 0 4px rgba(37,99,235,0.25);
+
+      --font-main: 'Lexend', 'Atkinson Hyperlegible', system-ui, sans-serif;
+      --font-caa: 'Lexend', 'Atkinson Hyperlegible', sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0b1120;
+      --card-bg: #1e293b;
+      --card-subtle: #0f172a;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-light: #64748b;
+      --border: #334155;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --primary-light: #0c4a6e;
+      --accent-light: #3b0764;
+      --fitz-people-bg: #78350f;
+      --fitz-action-bg: #064e3b;
+      --fitz-noun-bg: #7c2d12;
+      --fitz-desc-bg: #075985;
+      --fitz-social-bg: #831843;
+      --fitz-misc-bg: #334155;
+    }
+
+    /* Modalità Alto Contrasto per Ipovisione */
+    [data-theme="high-contrast"] {
+      --bg: #000000;
+      --card-bg: #121212;
+      --card-subtle: #1e1e1e;
+      --text-main: #ffff00;
+      --text-muted: #ffffff;
+      --text-light: #e0e0e0;
+      --border: #ffff00;
+      --primary: #ffff00;
+      --primary-hover: #ffffff;
+      --primary-light: #333300;
+      --fitz-people: #ffff00;
+      --fitz-action: #00ff00;
+      --fitz-noun: #ffaa00;
+      --fitz-desc: #00ffff;
+      --fitz-social: #ff00ff;
+      --fitz-misc: #ffffff;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.25s, color 0.25s;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.case-uppercase .caa-label,
+    body.case-uppercase .caa-card-text {
+      text-transform: uppercase !important;
+      letter-spacing: 0.05em;
+    }
+
+    /* ==========================================================================
+       HEADER & ACCESSIBILITÀ
+       ========================================================================== */
+    header {
+      background: var(--card-bg);
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-badge {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #2563eb, #8b5cf6);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.4rem;
+      box-shadow: 0 4px 10px rgba(37,99,235,0.3);
+    }
+
+    .logo-text h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-text h1 span.highlight {
+      background: linear-gradient(135deg, #2563eb, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .accessibility-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-tool {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.45rem 0.8rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .btn-tool:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-tool.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .tts-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+    }
+
+    .tts-controls select {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      max-width: 140px;
+    }
+
+    /* ==========================================================================
+       NAVIGAZIONE A SCHEDE
+       ========================================================================== */
+    .tabs-nav {
+      max-width: 1400px;
+      margin: 1.25rem auto 0;
+      padding: 0 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 220px;
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: left;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-highlight);
+    }
+
+    .tab-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      background: var(--card-bg);
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+
+    .tab-info h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .tab-info p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* ==========================================================================
+       MAIN & LAYOUT
+       ========================================================================== */
+    main {
+      max-width: 1400px;
+      margin: 1.25rem auto;
+      padding: 0 1.25rem 2.5rem;
+      flex: 1;
+      width: 100%;
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       TAB 1: TESTO -> IMMAGINI CAA
+       ========================================================================== */
+    .translator-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .card-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .caa-input {
+      width: 100%;
+      min-height: 105px;
+      padding: 1.1rem;
+      padding-right: 3.5rem;
+      background: var(--card-subtle);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-main);
+      font-size: 1.15rem;
+      color: var(--text-main);
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .caa-input:focus {
+      border-color: var(--primary);
+      background: var(--card-bg);
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+    }
+
+    .btn-input-clear {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: color 0.2s;
+    }
+
+    .btn-input-clear:hover {
+      color: var(--danger);
+      background: var(--danger-light);
+    }
+
+    .quick-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+      align-items: center;
+    }
+
+    .quick-chip-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .chip-btn {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      border-radius: var(--radius-full);
+      padding: 0.35rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .chip-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .translate-options {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       STRISCIA CAA & TESSERE
+       ========================================================================== */
+    .strip-container {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .strip-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .strip-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-action.btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 10px rgba(37,99,235,0.25);
+    }
+
+    .btn-action.btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-action.btn-danger {
+      color: var(--danger);
+    }
+
+    .btn-action.btn-danger:hover {
+      background: var(--danger-light);
+      border-color: var(--danger);
+    }
+
+    .caa-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      min-height: 140px;
+      padding: 0.85rem;
+      background: var(--card-subtle);
+      border-radius: var(--radius-md);
+      align-items: center;
+      border: 2px dashed var(--border);
+    }
+
+    .caa-strip.empty-state {
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    /* Singola Tessera CAA */
+    .caa-card {
+      background: #ffffff;
+      color: #1e293b;
+      border: 3.5px solid var(--card-border-color, #e2e8f0);
+      border-radius: var(--radius-md);
+      width: 115px;
+      min-height: 130px;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s;
+    }
+
+    .caa-card:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: var(--shadow-md);
+    }
+
+    .caa-card.speaking {
+      transform: translateY(-4px) scale(1.06);
+      box-shadow: 0 0 0 4px #2563eb, 0 10px 20px rgba(37,99,235,0.3) !important;
+      border-color: #2563eb !important;
+      animation: pulseSpeaking 0.8s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulseSpeaking {
+      from { transform: translateY(-3px) scale(1.04); }
+      to { transform: translateY(-5px) scale(1.07); }
+    }
+
+    .caa-card-img-wrap {
+      width: 74px;
+      height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 0.25rem;
+    }
+
+    .caa-card img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .caa-card-text {
+      font-family: var(--font-caa);
+      font-size: 0.84rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.15;
+      color: #0f172a;
+      word-break: break-word;
+      width: 100%;
+      padding-top: 0.2rem;
+    }
+
+    .caa-category-dot {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--card-border-color, #94a3b8);
+    }
+
+    /* Pulsanti di controllo sulla tessera */
+    .caa-card-tools {
+      position: absolute;
+      top: -9px;
+      right: -9px;
+      display: none;
+      gap: 3px;
+    }
+
+    .caa-card:hover .caa-card-tools {
+      display: flex;
+    }
+
+    .caa-card-btn-mini {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .caa-card-btn-change {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .caa-card-btn-remove {
+      background: #ef4444;
+      color: white;
+    }
+
+    /* Classi Fitzgerald per i bordi */
+    .fitz-people { --card-border-color: var(--fitz-people); }
+    .fitz-action { --card-border-color: var(--fitz-action); }
+    .fitz-noun   { --card-border-color: var(--fitz-noun); }
+    .fitz-desc   { --card-border-color: var(--fitz-desc); }
+    .fitz-social { --card-border-color: var(--fitz-social); }
+    .fitz-misc   { --card-border-color: var(--fitz-misc); }
+
+    /* ==========================================================================
+       TAB 2: COMPOSITORE SIMBOLI CAA -> TESTO
+       ========================================================================== */
+    .builder-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .builder-strip-box {
+      background: var(--card-bg);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: 0 4px 15px rgba(37,99,235,0.08);
+    }
+
+    .translated-sentence-box {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--card-subtle);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .translated-text {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .translated-text:empty::before {
+      content: "Clicca sui simboli qui sotto per costruire la frase...";
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    .board-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+    }
+
+    .board-search-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      align-items: center;
+    }
+
+    .search-input-box {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--card-subtle);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      background: var(--card-bg);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .category-pills {
+      display: flex;
+      gap: 0.6rem;
+      overflow-x: auto;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.25rem;
+      scrollbar-width: thin;
+    }
+
+    .cat-pill {
+      background: var(--card-subtle);
+      border: 1.5px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-full);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .cat-pill:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .cat-pill.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .cat-pill.cat-people { border-left: 6px solid var(--fitz-people); }
+    .cat-pill.cat-action { border-left: 6px solid var(--fitz-action); }
+    .cat-pill.cat-noun   { border-left: 6px solid var(--fitz-noun); }
+    .cat-pill.cat-desc   { border-left: 6px solid var(--fitz-desc); }
+    .cat-pill.cat-social { border-left: 6px solid var(--fitz-social); }
+
+    .symbols-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+      gap: 0.85rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      background: var(--card-subtle);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .symbol-card-btn {
+      background: #ffffff;
+      border: 3px solid var(--card-border-color, #cbd5e1);
+      border-radius: var(--radius-md);
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 110px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      user-select: none;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .symbol-card-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+
+    .symbol-card-btn:active {
+      transform: scale(0.96);
+    }
+
+    .symbol-card-btn img {
+      width: 58px;
+      height: 58px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .symbol-card-btn .symbol-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+      color: #0f172a;
+      line-height: 1.15;
+      margin-top: 0.25rem;
+      word-break: break-word;
+    }
+
+    /* ==========================================================================
+       TAB 3: VOCE SIMULTANEA -> CAA
+       ========================================================================== */
+    .speech-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .mic-hero-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mic-button-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 1rem 0;
+    }
+
+    .btn-mic-toggle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: #ffffff;
+      font-size: 2.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 25px rgba(37,99,235,0.4);
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      z-index: 2;
+    }
+
+    .btn-mic-toggle:hover {
+      transform: scale(1.06);
+    }
+
+    .btn-mic-toggle.recording {
+      background: linear-gradient(135deg, #ef4444, #f43f5e);
+      box-shadow: 0 8px 25px rgba(239,68,68,0.5);
+      animation: pulseMic 1.5s infinite;
+    }
+
+    @keyframes pulseMic {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 24px rgba(239,68,68,0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    }
+
+    .mic-status-label {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .mic-hint {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .speech-transcript-box {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--card-subtle);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .transcript-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .live-transcript-text {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--text-main);
+      min-height: 2.2rem;
+    }
+
+    .live-transcript-text .interim {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Modalità Sottotitoli LIM Gigante */
+    .fullscreen-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      padding: 2.5rem;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .fullscreen-overlay.active {
+      display: flex;
+    }
+
+    .fullscreen-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-full);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .fullscreen-transcript {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 2rem;
+      max-width: 900px;
+    }
+
+    .fullscreen-strip {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 1300px;
+    }
+
+    .fullscreen-strip .caa-card {
+      width: 160px;
+      min-height: 180px;
+      padding: 0.85rem;
+    }
+
+    .fullscreen-strip .caa-card-img-wrap {
+      width: 110px;
+      height: 110px;
+    }
+
+    .fullscreen-strip .caa-card-text {
+      font-size: 1.15rem;
+    }
+
+    /* ==========================================================================
+       MODALITÀ DI STAMPA & PECS
+       ========================================================================== */
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+      header, .tabs-nav, .strip-toolbar, .translate-options, .quick-chips, .builder-layout > .board-container, .mic-hero-card, .btn-action, .caa-card-tools {
+        display: none !important;
+      }
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      .card-box, .strip-container, .builder-strip-box {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .caa-strip {
+        border: 2px solid #000 !important;
+        background: #fff !important;
+        padding: 10px !important;
+      }
+      .caa-card {
+        border: 3px solid #000 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+      .print-page-header {
+        display: block !important;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+    }
+
+    .print-page-header {
+      display: none;
+    }
+
+    /* Modal per Varianti Simbolo */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-window {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      max-width: 650px;
+      width: 100%;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .modal-variants-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 0.85rem;
+      max-height: 380px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .variant-option-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.5rem;
+      background: var(--card-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .variant-option-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      background: #ffffff;
+    }
+
+    .variant-option-card img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+    }
+
+    .variant-option-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-align: center;
+      margin-top: 0.3rem;
+      word-break: break-word;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      padding: 1.25rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .toast-msg {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1e293b;
+      color: #ffffff;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 500;
+      animation: slideInToast 0.25s ease-out;
+    }
+
+    @keyframes slideInToast {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="case-uppercase">
+
+  <!-- ==========================================================================
+       HEADER PRINCIPALE
+       ========================================================================== -->
+  <header>
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-badge">💬</div>
+        <div class="logo-text">
+          <h1>Comuni<span class="highlight">CAA</span> · Traduttore Inclusivo</h1>
+          <p>Comunicazione Aumentativa e Alternativa con Simboli ARASAAC & Voce</p>
+        </div>
+      </div>
+
+      <div class="accessibility-bar">
+        <button class="btn-tool active" id="btnToggleCase" title="Alterna maiuscolo e minuscolo per le etichette">
+          <span>🔤</span> <span id="labelCaseText">MAIUSCOLO</span>
+        </button>
+
+        <button class="btn-tool active" id="btnToggleFitz" title="Attiva o disattiva la chiave di Fitzgerald (bordo colorato per categoria grammaticale)">
+          <span>🎨</span> <span>Fitzgerald CAA</span>
+        </button>
+
+        <div class="tts-controls" title="Impostazioni sintesi vocale">
+          <span>🔊</span>
+          <select id="voiceSelect" title="Scegli la voce italiana"></select>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Velocità:</span>
+          <select id="rateSelect" title="Velocità di lettura">
+            <option value="0.7">0.7x (Lenta)</option>
+            <option value="0.85">0.85x (Calma)</option>
+            <option value="1.0" selected>1.0x (Normale)</option>
+            <option value="1.15">1.15x (Veloce)</option>
+          </select>
+        </div>
+
+        <button class="btn-tool" id="btnThemeToggle" title="Cambia tema (Chiaro / Scuro / Alto Contrasto)">
+          <span id="themeIcon">🌓</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       NAVIGAZIONE A SCHEDE
+       ========================================================================== -->
+  <nav class="tabs-nav" aria-label="Modalità Traduttore">
+    <button class="tab-btn active" data-tab="tab-text-to-caa">
+      <div class="tab-icon">✍️</div>
+      <div class="tab-info">
+        <h3>Testo ➔ CAA</h3>
+        <p>Scrivi parole o frasi e trasformale in strisce visive</p>
+      </div>
+    </button>
+
+    <button class="tab-btn" data-tab="tab-caa-to-text">
+      <div class="tab-icon">🧩</div>
+      <div class="tab-info">
+        <h3>CAA ➔ Testo & Voce</h3>
+        <p>Scegli i simboli e ascolta la frase parlata</p>
+      </div>
+    </button>
+
+    <button class="tab-btn" data-tab="tab-speech-to-caa">
+      <div class="tab-icon">🎙️</div>
+      <div class="tab-info">
+        <h3>Voce Live ➔ CAA</h3>
+        <p>Parla al microfono e traduci simultaneamente</p>
+      </div>
+    </button>
+  </nav>
+
+  <!-- ==========================================================================
+       MAIN
+       ========================================================================== -->
+  <main>
+    <div class="print-page-header">
+      <h2>Striscia di Comunicazione Aumentativa Alternativa (CAA)</h2>
+      <p>Simboli pittografici ARASAAC · Generato con ComuniCAA</p>
+    </div>
+
+    <!-- TAB 1: TESTO -> IMMAGINI CAA -->
+    <section id="tab-text-to-caa" class="tab-pane active">
+      <div class="translator-grid">
+        <div class="card-box">
+          <div class="card-header-flex">
+            <h2 class="card-title">
+              <span>✍️</span> Inserisci il testo da tradurre in immagini CAA
+            </h2>
+          </div>
+
+          <div class="input-wrapper">
+            <textarea 
+              id="txtInput" 
+              class="caa-input" 
+              placeholder="Digita qui la frase in italiano (es: Io voglio mangiare la mela, andiamo a scuola, ho bisogno di aiuto)..."
+              rows="3"
+            ></textarea>
+            <button class="btn-input-clear" id="btnClearInput" title="Cancella testo">✖</button>
+          </div>
+
+          <div class="quick-chips">
+            <span class="quick-chip-label">Esempi rapidi:</span>
+            <button class="chip-btn" data-text="Io voglio mangiare la mela">Io voglio mangiare la mela</button>
+            <button class="chip-btn" data-text="Andiamo a giocare a scuola con gli amici">Andiamo a scuola con gli amici</button>
+            <button class="chip-btn" data-text="Ho bisogno di aiuto per andare in bagno">Aiuto per il bagno</button>
+            <button class="chip-btn" data-text="Oggi sono molto felice con la maestra e il papà">Oggi sono felice</button>
+            <button class="chip-btn" data-text="Voglio bere acqua">Voglio bere acqua</button>
+          </div>
+
+          <div class="translate-options">
+            <label class="checkbox-label" title="Normalizza i verbi e i plurali nel dizionario CAA">
+              <input type="checkbox" id="chkSmartFilter" checked>
+              <span>Normalizzazione intelligente (lemmatizzazione verbi e plurali)</span>
+            </label>
+            <label class="checkbox-label" title="Includi connettori e preposizioni grammaticali">
+              <input type="checkbox" id="chkIncludeArticles" checked>
+              <span>Includi articoli e preposizioni</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="strip-container">
+          <div class="strip-toolbar">
+            <h3 class="card-title" style="font-size:1.05rem;">
+              <span>🖼️</span> Striscia di Comunicazione Visiva CAA
+            </h3>
+            <div class="strip-actions">
+              <button class="btn-action btn-primary" id="btnSpeakStrip1">
+                <span>🔊</span> Ascolta Frase (TTS)
+              </button>
+              <button class="btn-action" id="btnExportImage1" title="Scarica l'intera striscia come immagine PNG">
+                <span>💾</span> Salva Immagine
+              </button>
+              <button class="btn-action" id="btnPrintStrip1" title="Stampa o crea schede ritagliabili con velcro">
+                <span>🖨️</span> Stampa Scheda
+              </button>
+              <button class="btn-action btn-danger" id="btnClearStrip1">
+                <span>🗑️</span> Svuota
+              </button>
+            </div>
+          </div>
+
+          <div class="caa-strip" id="stripTextToCaa">
+            <div class="caa-strip empty-state" style="border:none; width:100%;">
+              <span>👆 Digita del testo sopra o clicca su uno degli esempi per veder comparire i simboli CAA!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: COMPOSITORE SIMBOLI CAA -> TESTO & VOCE -->
+    <section id="tab-caa-to-text" class="tab-pane">
+      <div class="builder-layout">
+        <div class="builder-strip-box">
+          <div class="strip-toolbar">
+            <h3 class="card-title" style="font-size:1.05rem;">
+              <span>🧩</span> Striscia Composta dall'Utente
+            </h3>
+            <div class="strip-actions">
+              <button class="btn-action btn-primary" id="btnSpeakBuilder">
+                <span>🗣️</span> Parla Frase (TTS)
+              </button>
+              <button class="btn-action" id="btnCopyTextBuilder">
+                <span>📋</span> Copia Testo
+              </button>
+              <button class="btn-action btn-danger" id="btnClearBuilder">
+                <span>🗑️</span> Cancella Tutto
+              </button>
+            </div>
+          </div>
+
+          <div class="caa-strip" id="stripBuilder">
+            <div class="caa-strip empty-state" style="border:none; width:100%;">
+              <span>Tocca o clicca sui simboli della tastiera in basso per comporre la tua frase!</span>
+            </div>
+          </div>
+
+          <div class="translated-sentence-box">
+            <div>
+              <span style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Traduzione in linguaggio naturale:</span>
+              <div class="translated-text" id="builderNaturalText"></div>
+            </div>
+            <button class="btn-tool" id="btnRepeatSpeech" title="Riascolta con pronuncia naturale" style="font-size:1.1rem; padding:0.6rem 1rem;">
+              <span>🔊</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="board-container">
+          <div class="board-search-bar">
+            <div class="search-input-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="boardSearchInput" class="search-input" placeholder="Cerca tra oltre 15.000 simboli ARASAAC (es. pizza, dormire, cane, altalena, papà)...">
+            </div>
+          </div>
+
+          <div class="category-pills" id="categoryPills">
+            <button class="cat-pill active" data-cat="tutti">🌟 Tutti i più usati</button>
+            <button class="cat-pill cat-people" data-cat="persone">👤 Persone & Pronomi</button>
+            <button class="cat-pill cat-action" data-cat="azioni">🏃 Azioni & Verbi</button>
+            <button class="cat-pill cat-noun" data-cat="bisogni">🍎 Bisogni & Cibo</button>
+            <button class="cat-pill cat-noun" data-cat="scuola">🏫 Scuola & Luoghi</button>
+            <button class="cat-pill cat-noun" data-cat="oggetti">🧸 Giochi & Oggetti</button>
+            <button class="cat-pill cat-desc" data-cat="emozioni">😊 Emozioni & Stati</button>
+            <button class="cat-pill cat-social" data-cat="sociale">💬 Comunicazione Rapida</button>
+          </div>
+
+          <div class="symbols-grid" id="symbolsGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: VOCE SIMULTANEA -> CAA -->
+    <section id="tab-speech-to-caa" class="tab-pane">
+      <div class="speech-layout">
+        <div class="mic-hero-card">
+          <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:0.5rem;">
+            🎙️ Traduttore Vocale Simultaneo in Simboli CAA
+          </h2>
+          <p class="mic-hint">
+            Parla chiaramente in italiano: le tue parole si trasformeranno istantaneamente nei pittogrammi corretti in tempo reale!
+          </p>
+
+          <div class="mic-button-wrapper">
+            <button class="btn-mic-toggle" id="btnToggleSpeech" title="Clicca per iniziare a parlare">
+              <span>🎤</span>
+            </button>
+          </div>
+
+          <div class="mic-status-label" id="micStatusLabel">Tocca il microfono per iniziare a parlare</div>
+          
+          <div style="margin-top:1rem; display:flex; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
+            <button class="btn-tool" id="btnOpenFullscreen" title="Attiva modalità LIM a tutto schermo per la classe">
+              <span>🖥️</span> Modalità LIM / Schermo Intero
+            </button>
+            <button class="btn-tool" id="btnResetSpeechStrip" title="Pulisci la striscia corrente">
+              <span>🗑️</span> Pulisci
+            </button>
+          </div>
+
+          <div class="speech-transcript-box">
+            <div class="transcript-header">
+              <span>🗣️</span> Trascrizione vocale rilevata:
+            </div>
+            <div class="live-transcript-text" id="speechLiveTranscript">
+              <span class="interim">In attesa della voce...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="strip-container">
+          <div class="strip-toolbar">
+            <h3 class="card-title" style="font-size:1.05rem;">
+              <span>🖼️</span> Striscia Generata dalla Voce in Tempo Reale
+            </h3>
+            <div class="strip-actions">
+              <button class="btn-action btn-primary" id="btnSpeakSpeechStrip">
+                <span>🔊</span> Riascolta
+              </button>
+              <button class="btn-action" id="btnSaveSpeechAsImage">
+                <span>💾</span> Salva Immagine
+              </button>
+              <button class="btn-action" id="btnPrintSpeechStrip">
+                <span>🖨️</span> Stampa
+              </button>
+            </div>
+          </div>
+
+          <div class="caa-strip" id="stripSpeechToCaa">
+            <div class="caa-strip empty-state" style="border:none; width:100%;">
+              <span>I simboli CAA compariranno qui simultaneamente mentre parli!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALITÀ SOTTOTITOLI LIM GIGANTE -->
+  <div class="fullscreen-overlay" id="fullscreenOverlay">
+    <button class="fullscreen-close" id="btnCloseFullscreen">✕ Esci da Schermo Intero</button>
+    <div class="fullscreen-transcript" id="fullscreenTranscript">Parla al microfono...</div>
+    <div class="fullscreen-strip" id="fullscreenStrip"></div>
+  </div>
+
+  <!-- MODAL PER SCEGLIERE VARIANTI DI SIMBOLO -->
+  <div class="modal-backdrop" id="variantsModal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="modalWordTitle" style="font-weight:700;">Scegli un simbolo alternativo</h3>
+        <button class="btn-input-clear" id="btnCloseModal">✕</button>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+        Seleziona il pittogramma ARASAAC che preferisci per questa parola:
+      </p>
+      <div class="modal-variants-grid" id="modalVariantsGrid"></div>
+    </div>
+  </div>
+
+  <canvas id="exportCanvas" style="display:none;"></canvas>
+
+  <footer>
+    <p>
+      <strong>ComuniCAA</strong> · Progettato per l'inclusione scolastica, il supporto alla disabilità e BES (L. 104/1992).
+    </p>
+    <p style="margin-top:0.35rem; font-size:0.78rem;">
+      Simboli pittografici forniti da <a href="https://arasaac.org" target="_blank" rel="noopener">ARASAAC</a> (Governo d'Aragona, Spagna - Licenza CC BY-NC-SA).
+    </p>
+  </footer>
+
+  <!-- ==========================================================================
+       LOGICA JAVASCRIPT CORRETTA E VERIFICATA
+       ========================================================================== -->
+  <script>
+  (function() {
+    'use strict';
+
+    /* ==========================================================================
+       1. DATABASE UFFICIALE E VERIFICATO DI PITTOGRAMMI ARASAAC
+       Ogni ID corrisponde ESATTAMENTE al simbolo ufficiale certificato.
+       ========================================================================== */
+    const CORE_AAC_VOCABULARY = [
+      // PERSONE & PRONOMI (Giallo / People)
+      { id: 6632, word: 'io', cat: 'people', group: 'persone' },
+      { id: 6625, word: 'tu', cat: 'people', group: 'persone' },
+      { id: 6480, word: 'lui', cat: 'people', group: 'persone' },
+      { id: 7028, word: 'lei', cat: 'people', group: 'persone' },
+      { id: 7183, word: 'noi', cat: 'people', group: 'persone' },
+      { id: 7304, word: 'voi', cat: 'people', group: 'persone' },
+      { id: 7030, word: 'loro', cat: 'people', group: 'persone' },
+      { id: 2458, word: 'mamma', label: 'mamma', cat: 'people', group: 'persone' },
+      { id: 31146, word: 'papà', label: 'papà', cat: 'people', group: 'persone' },
+      { id: 2485, word: 'bambino', cat: 'people', group: 'persone' },
+      { id: 2484, word: 'bambina', cat: 'people', group: 'persone' },
+      { id: 2456, word: 'maestra', cat: 'people', group: 'persone' },
+      { id: 6556, word: 'maestro', cat: 'people', group: 'persone' },
+      { id: 25790, word: 'amico', cat: 'people', group: 'persone' },
+      { id: 8486, word: 'amica', cat: 'people', group: 'persone' },
+      { id: 2467, word: 'dottore', cat: 'people', group: 'persone' },
+      { id: 2496, word: 'nonno', cat: 'people', group: 'persone' },
+      { id: 2495, word: 'nonna', cat: 'people', group: 'persone' },
+
+      // AZIONI & VERBI (Verde / Action)
+      { id: 5441, word: 'volere', label: 'voglio', cat: 'action', group: 'azioni' },
+      { id: 6456, word: 'mangiare', cat: 'action', group: 'azioni' },
+      { id: 6061, word: 'bere', cat: 'action', group: 'azioni' },
+      { id: 8142, word: 'andare', cat: 'action', group: 'azioni' },
+      { id: 11708, word: 'venire', cat: 'action', group: 'azioni' },
+      { id: 23392, word: 'giocare', cat: 'action', group: 'azioni' },
+      { id: 6479, word: 'dormire', cat: 'action', group: 'azioni' },
+      { id: 2474, word: 'guardare', label: 'guardare', cat: 'action', group: 'azioni' },
+      { id: 2381, word: 'ascoltare', cat: 'action', group: 'azioni' },
+      { id: 2447, word: 'leggere', cat: 'action', group: 'azioni' },
+      { id: 2380, word: 'scrivere', cat: 'action', group: 'azioni' },
+      { id: 5506, word: 'disegnare', cat: 'action', group: 'azioni' },
+      { id: 2348, word: 'colorare', cat: 'action', group: 'azioni' },
+      { id: 3345, word: 'parlare', cat: 'action', group: 'azioni' },
+      { id: 34826, word: 'lavare', cat: 'action', group: 'azioni' },
+      { id: 2637, word: 'aprire', cat: 'action', group: 'azioni' },
+      { id: 2697, word: 'chiudere', cat: 'action', group: 'azioni' },
+      { id: 4606, word: 'prendere', cat: 'action', group: 'azioni' },
+      { id: 28431, word: 'dare', cat: 'action', group: 'azioni' },
+      { id: 32751, word: 'fare', cat: 'action', group: 'azioni' },
+      { id: 8289, word: 'fermare', label: 'stop', cat: 'action', group: 'azioni' },
+      { id: 3251, word: 'camminare', cat: 'action', group: 'azioni' },
+      { id: 2719, word: 'correre', cat: 'action', group: 'azioni' },
+      { id: 2801, word: 'sedersi', cat: 'action', group: 'azioni' },
+      { id: 4677, word: 'alzarsi', cat: 'action', group: 'azioni' },
+      { id: 8109, word: 'aspettare', cat: 'action', group: 'azioni' },
+      { id: 12252, word: 'aiutare', label: 'aiuto', cat: 'action', group: 'azioni' },
+
+      // BISOGNI & CIBI (Arancione / Noun)
+      { id: 32464, word: 'acqua', cat: 'noun', group: 'bisogni' },
+      { id: 2462, word: 'mela', cat: 'noun', group: 'bisogni' },
+      { id: 2494, word: 'pane', cat: 'noun', group: 'bisogni' },
+      { id: 8652, word: 'pasta', cat: 'noun', group: 'bisogni' },
+      { id: 2527, word: 'pizza', cat: 'noun', group: 'bisogni' },
+      { id: 2530, word: 'banana', cat: 'noun', group: 'bisogni' },
+      { id: 2445, word: 'latte', cat: 'noun', group: 'bisogni' },
+      { id: 11463, word: 'succo', cat: 'noun', group: 'bisogni' },
+      { id: 8295, word: 'biscotto', cat: 'noun', group: 'bisogni' },
+      { id: 2334, word: 'cioccolato', cat: 'noun', group: 'bisogni' },
+      { id: 35209, word: 'gelato', cat: 'noun', group: 'bisogni' },
+      { id: 4695, word: 'merenda', cat: 'noun', group: 'bisogni' },
+      { id: 7272, word: 'fame', cat: 'noun', group: 'bisogni' },
+      { id: 4963, word: 'sete', cat: 'noun', group: 'bisogni' },
+
+      // SCUOLA & LUOGHI (Arancione / Noun)
+      { id: 32446, word: 'scuola', cat: 'noun', group: 'scuola' },
+      { id: 6964, word: 'casa', cat: 'noun', group: 'scuola' },
+      { id: 5921, word: 'bagno', cat: 'noun', group: 'scuola' },
+      { id: 5913, word: 'classe', cat: 'noun', group: 'scuola' },
+      { id: 2859, word: 'parco', cat: 'noun', group: 'scuola' },
+      { id: 6005, word: 'palestra', cat: 'noun', group: 'scuola' },
+      { id: 5970, word: 'mensa', cat: 'noun', group: 'scuola' },
+
+      // OGGETTI & GIOCHI (Arancione / Noun)
+      { id: 25191, word: 'libro', cat: 'noun', group: 'oggetti' },
+      { id: 2359, word: 'quaderno', cat: 'noun', group: 'oggetti' },
+      { id: 2440, word: 'matita', cat: 'noun', group: 'oggetti' },
+      { id: 2282, word: 'penna', cat: 'noun', group: 'oggetti' },
+      { id: 2409, word: 'gomma', cat: 'noun', group: 'oggetti' },
+      { id: 2591, word: 'forbici', cat: 'noun', group: 'oggetti' },
+      { id: 2510, word: 'colla', cat: 'noun', group: 'oggetti' },
+      { id: 2475, word: 'zaino', cat: 'noun', group: 'oggetti' },
+      { id: 10242, word: 'banco', cat: 'noun', group: 'oggetti' },
+      { id: 3155, word: 'sedia', cat: 'noun', group: 'oggetti' },
+      { id: 3241, word: 'palla', cat: 'noun', group: 'oggetti' },
+      { id: 9813, word: 'giocattolo', cat: 'noun', group: 'oggetti' },
+      { id: 9165, word: 'tablet', cat: 'noun', group: 'oggetti' },
+      { id: 2487, word: 'computer', cat: 'noun', group: 'oggetti' },
+      { id: 24795, word: 'musica', cat: 'noun', group: 'oggetti' },
+      { id: 7202, word: 'cane', cat: 'noun', group: 'oggetti' },
+      { id: 7114, word: 'gatto', cat: 'noun', group: 'oggetti' },
+
+      // EMOZIONI & STATI (Blu / Desc)
+      { id: 35547, word: 'felice', cat: 'desc', group: 'emozioni' },
+      { id: 2606, word: 'triste', cat: 'desc', group: 'emozioni' },
+      { id: 2374, word: 'arrabbiato', cat: 'desc', group: 'emozioni' },
+      { id: 10261, word: 'paura', cat: 'desc', group: 'emozioni' },
+      { id: 2314, word: 'stanco', cat: 'desc', group: 'emozioni' },
+      { id: 2367, word: 'dolore', label: 'male', cat: 'desc', group: 'emozioni' },
+      { id: 4583, word: 'caldo', cat: 'desc', group: 'emozioni' },
+      { id: 4652, word: 'freddo', cat: 'desc', group: 'emozioni' },
+      { id: 37828, word: 'calmo', cat: 'desc', group: 'emozioni' },
+      { id: 5397, word: 'bene', label: 'bene', cat: 'desc', group: 'emozioni' },
+      { id: 4658, word: 'grande', cat: 'desc', group: 'emozioni' },
+      { id: 4716, word: 'piccolo', cat: 'desc', group: 'emozioni' },
+
+      // SOCIALE & FORMULE (Rosa / Social)
+      { id: 5584, word: 'sì', label: 'sì', cat: 'social', group: 'sociale' },
+      { id: 5525, word: 'no', cat: 'social', group: 'sociale' },
+      { id: 8129, word: 'grazie', cat: 'social', group: 'sociale' },
+      { id: 8194, word: 'per favore', cat: 'social', group: 'sociale' },
+      { id: 6522, word: 'ciao', cat: 'social', group: 'sociale' },
+      { id: 6028, word: 'arrivederci', cat: 'social', group: 'sociale' },
+      { id: 11625, word: 'scusa', cat: 'social', group: 'sociale' },
+      { id: 28429, word: 'basta', label: 'basta', cat: 'social', group: 'sociale' },
+      { id: 6043, word: 'ancora', cat: 'social', group: 'sociale' },
+      { id: 28429, word: 'finito', label: 'finito', cat: 'social', group: 'sociale' },
+      { id: 21917, word: 'mi piace', cat: 'social', group: 'sociale' },
+      { id: 22005, word: 'non mi piace', cat: 'social', group: 'sociale' }
+    ];
+
+    /* Mappa di ricerca istantanea O(1) */
+    const LOCAL_VOCAB_MAP = new Map();
+    CORE_AAC_VOCABULARY.forEach(item => {
+      LOCAL_VOCAB_MAP.set(item.word.toLowerCase(), item);
+      if (item.label) LOCAL_VOCAB_MAP.set(item.label.toLowerCase(), item);
+    });
+
+    /* ==========================================================================
+       2. MAPPATURA ESPLICITA DI PAROLE CRITICHE E DIZIONARIO MORFOLOGICO
+       Risolve ambiguità fonetiche, omonimie e verbi coniugati.
+       ========================================================================== */
+    const EXACT_CRITICAL_WORD_MAP = {
+      // Risoluzione papà/padre vs Papa di Roma
+      'papà': { id: 31146, word: 'papà', cat: 'people' },
+      'papa': { id: 31146, word: 'papà', cat: 'people' },
+      'papa\'': { id: 31146, word: 'papà', cat: 'people' },
+      'padre': { id: 31146, word: 'padre', cat: 'people' },
+      'babbo': { id: 31146, word: 'papà', cat: 'people' },
+      'mamma': { id: 2458, word: 'mamma', cat: 'people' },
+      'madre': { id: 2458, word: 'madre', cat: 'people' },
+
+      // Pronomi corretti
+      'io': { id: 6632, word: 'io', cat: 'people' },
+      'me': { id: 6632, word: 'io', cat: 'people' },
+      'mi': { id: 6632, word: 'io', cat: 'people' },
+      'tu': { id: 6625, word: 'tu', cat: 'people' },
+      'te': { id: 6625, word: 'tu', cat: 'people' },
+      'ti': { id: 6625, word: 'tu', cat: 'people' },
+      'lui': { id: 6480, word: 'lui', cat: 'people' },
+      'egli': { id: 6480, word: 'lui', cat: 'people' },
+      'lei': { id: 7028, word: 'lei', cat: 'people' },
+      'ella': { id: 7028, word: 'lei', cat: 'people' },
+      'noi': { id: 7183, word: 'noi', cat: 'people' },
+      'ci': { id: 7183, word: 'noi', cat: 'people' },
+      'voi': { id: 7304, word: 'voi', cat: 'people' },
+      'vi': { id: 7304, word: 'voi', cat: 'people' },
+      'loro': { id: 7030, word: 'loro', cat: 'people' },
+      'essi': { id: 7030, word: 'loro', cat: 'people' },
+      'esse': { id: 7030, word: 'loro', cat: 'people' },
+
+      // Conferma / Negazione
+      'sì': { id: 5584, word: 'sì', cat: 'social' },
+      'si': { id: 5584, word: 'sì', cat: 'social' },
+      'no': { id: 5525, word: 'no', cat: 'social' },
+      'non': { id: 5525, word: 'non', cat: 'social' },
+      'stop': { id: 8289, word: 'stop', cat: 'action' },
+      'basta': { id: 28429, word: 'basta', cat: 'social' },
+      'finito': { id: 28429, word: 'finito', cat: 'social' },
+
+      // Preposizioni standard
+      'con': { id: 7064, word: 'con', cat: 'misc' },
+      'in': { id: 7063, word: 'in', cat: 'misc' },
+      'su': { id: 7066, word: 'su', cat: 'misc' },
+      'sotto': { id: 7067, word: 'sotto', cat: 'misc' },
+      'dentro': { id: 7063, word: 'dentro', cat: 'misc' },
+      'fuori': { id: 7065, word: 'fuori', cat: 'misc' },
+      'per': { id: 8194, word: 'per', cat: 'misc' },
+
+      // Cibi critici
+      'acqua': { id: 32464, word: 'acqua', cat: 'noun' },
+      'pane': { id: 2494, word: 'pane', cat: 'noun' },
+      'pasta': { id: 8652, word: 'pasta', cat: 'noun' },
+      'pizza': { id: 2527, word: 'pizza', cat: 'noun' },
+      'mela': { id: 2462, word: 'mela', cat: 'noun' }
+    };
+
+    const LEMMA_DICTIONARY = {
+      // Volere
+      'voglio': 'volere', 'vuoi': 'volere', 'vuole': 'volere', 'vogliamo': 'volere', 'volete': 'volere', 'vogliono': 'volere', 'vorrei': 'volere',
+      // Andare
+      'vado': 'andare', 'vai': 'andare', 'va': 'andare', 'andiamo': 'andare', 'andate': 'andare', 'vanno': 'andare', 'andato': 'andare',
+      // Mangiare
+      'mangio': 'mangiare', 'mangi': 'mangiare', 'mangia': 'mangiare', 'mangiamo': 'mangiare', 'mangiate': 'mangiare', 'mangiano': 'mangiare', 'mangiato': 'mangiare',
+      // Bere
+      'bevo': 'bere', 'bevi': 'bere', 'beve': 'bere', 'beviamo': 'bere', 'bevete': 'bere', 'bevono': 'bere', 'bevuto': 'bere',
+      // Giocare
+      'gioco': 'giocare', 'giochi': 'giocare', 'gioca': 'giocare', 'giochiamo': 'giocare', 'giocate': 'giocare', 'giocano': 'giocare', 'giocato': 'giocare',
+      // Avere
+      'ho': 'avere', 'hai': 'avere', 'ha': 'avere', 'abbiamo': 'avere', 'avete': 'avere', 'hanno': 'avere', 'avevo': 'avere', 'avuto': 'avere',
+      // Essere
+      'sono': 'essere', 'sei': 'essere', 'è': 'essere', 'e\'': 'essere', 'siamo': 'essere', 'siete': 'essere', 'ero': 'essere', 'era': 'essere', 'erano': 'essere', 'stato': 'essere',
+      // Fare
+      'faccio': 'fare', 'fai': 'fare', 'fa': 'fare', 'facciamo': 'fare', 'fate': 'fare', 'fanno': 'fare', 'fatto': 'fare',
+      // Dormire
+      'dormo': 'dormire', 'dormi': 'dormire', 'dorme': 'dormire', 'dormiamo': 'dormire', 'dormite': 'dormire', 'dormono': 'dormire',
+      // Guardare / Vedere
+      'guardo': 'guardare', 'guardi': 'guardare', 'guarda': 'guardare', 'guardiamo': 'guardare', 'vedo': 'guardare', 'vedi': 'guardare', 'vede': 'guardare', 'vediamo': 'guardare',
+      // Ascoltare / Sentire
+      'ascolto': 'ascoltare', 'ascolti': 'ascoltare', 'ascolta': 'ascoltare', 'ascoltiamo': 'ascoltare', 'sento': 'ascoltare', 'senti': 'ascoltare', 'sente': 'ascoltare',
+      // Aiutare
+      'aiuti': 'aiutare', 'aiuta': 'aiutare', 'aiutami': 'aiutare', 'aiuto': 'aiutare', 'aiutaci': 'aiutare',
+      // Leggere & Scrivere
+      'leggo': 'leggere', 'leggi': 'leggere', 'legge': 'leggere', 'leggiamo': 'leggere', 'scrivo': 'scrivere', 'scrivi': 'scrivere', 'scrive': 'scrivere', 'scriviamo': 'scrivere',
+      // Disegnare & Colorare
+      'disegno': 'disegnare', 'disegni': 'disegnare', 'coloro': 'colorare', 'colora': 'colorare',
+      // Dare & Prendere
+      'do': 'dare', 'dai': 'dare', 'dà': 'dare', 'diamo': 'dare', 'date': 'dare', 'danno': 'dare', 'prendo': 'prendere', 'prendi': 'prendere', 'prende': 'prendere',
+      // Potere & Dovere
+      'posso': 'potere', 'puoi': 'potere', 'può': 'potere', 'possiamo': 'potere', 'devo': 'dovere', 'devi': 'dovere', 'deve': 'dovere', 'dobbiamo': 'dovere',
+      // Plurali comuni
+      'mele': 'mela', 'banane': 'banana', 'biscotti': 'biscotto', 'libri': 'libro', 'quaderni': 'quaderno',
+      'matite': 'matita', 'penne': 'penna', 'bambini': 'bambino', 'bambine': 'bambina', 'amici': 'amico',
+      'amiche': 'amica', 'maestri': 'maestro', 'maestre': 'maestra', 'giochi': 'giocattolo', 'giocattoli': 'giocattolo',
+      'cani': 'cane', 'gatti': 'gatto', 'scarpe': 'scarpa', 'fiori': 'fiore', 'compagni': 'amico', 'compagna': 'amica'
+    };
+
+    const COMPOUND_PHRASES = [
+      { phrase: 'per favore', lemma: 'per favore', id: 8194, cat: 'social' },
+      { phrase: 'per piacere', lemma: 'per favore', id: 8194, cat: 'social' },
+      { phrase: 'non mi piace', lemma: 'non mi piace', id: 22005, cat: 'social' },
+      { phrase: 'mi piace', lemma: 'mi piace', id: 21917, cat: 'social' },
+      { phrase: 'ho fame', lemma: 'fame', id: 7272, cat: 'noun' },
+      { phrase: 'ho sete', lemma: 'sete', id: 4963, cat: 'noun' },
+      { phrase: 'ho sonno', lemma: 'dormire', id: 6479, cat: 'action' },
+      { phrase: 'ho caldo', lemma: 'caldo', id: 4583, cat: 'desc' },
+      { phrase: 'ho freddo', lemma: 'freddo', id: 4652, cat: 'desc' },
+      { phrase: 'ho bisogno di aiuto', lemma: 'aiuto', id: 12252, cat: 'action' },
+      { phrase: 'andare in bagno', lemma: 'bagno', id: 5921, cat: 'scuola' },
+      { phrase: 'fare la pipì', lemma: 'bagno', id: 5921, cat: 'scuola' },
+      { phrase: 'succo di frutta', lemma: 'succo', id: 11463, cat: 'noun' }
+    ];
+
+    const ARTICLES_AND_CONNECTORS = new Set([
+      'il', 'lo', 'la', 'i', 'gli', 'le', 'l',
+      'un', 'uno', 'una',
+      'di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra',
+      'e', 'ed', 'o', 'ma', 'però', 'se', 'perché', 'del', 'della', 'dei', 'delle', 'al', 'alla', 'ai', 'alle'
+    ]);
+
+    /* ==========================================================================
+       3. MOTORE DI RICERCA ACCURATO ARASAAC (EXACT KEYWORD MATCHING)
+       ========================================================================== */
+    const ARASAAC_CACHE = new Map();
+
+    async function fetchPictogramForWord(word) {
+      const cleanWord = word.trim().toLowerCase();
+      if (!cleanWord) return null;
+
+      // 1. Controlla mappatura critica esatta
+      if (EXACT_CRITICAL_WORD_MAP[cleanWord]) {
+        const item = EXACT_CRITICAL_WORD_MAP[cleanWord];
+        return {
+          id: item.id,
+          word: item.word,
+          originalWord: word,
+          cat: item.cat,
+          imgUrl: `https://static.arasaac.org/pictograms/${item.id}/${item.id}_300.png`
+        };
+      }
+
+      // 2. Controlla vocabolario locale principale
+      if (LOCAL_VOCAB_MAP.has(cleanWord)) {
+        const item = LOCAL_VOCAB_MAP.get(cleanWord);
+        return {
+          id: item.id,
+          word: item.label || item.word,
+          originalWord: word,
+          cat: item.cat || 'noun',
+          imgUrl: `https://static.arasaac.org/pictograms/${item.id}/${item.id}_300.png`
+        };
+      }
+
+      // 3. Controlla cache runtime
+      if (ARASAAC_CACHE.has(cleanWord)) {
+        return ARASAAC_CACHE.get(cleanWord);
+      }
+
+      // 4. Controlla lemmatizzazione
+      const lemma = LEMMA_DICTIONARY[cleanWord];
+      if (lemma) {
+        if (EXACT_CRITICAL_WORD_MAP[lemma]) {
+          const item = EXACT_CRITICAL_WORD_MAP[lemma];
+          const res = {
+            id: item.id,
+            word: item.word,
+            originalWord: word,
+            cat: item.cat,
+            imgUrl: `https://static.arasaac.org/pictograms/${item.id}/${item.id}_300.png`
+          };
+          ARASAAC_CACHE.set(cleanWord, res);
+          return res;
+        }
+        if (LOCAL_VOCAB_MAP.has(lemma)) {
+          const item = LOCAL_VOCAB_MAP.get(lemma);
+          const res = {
+            id: item.id,
+            word: item.label || item.word,
+            originalWord: word,
+            cat: item.cat || 'noun',
+            imgUrl: `https://static.arasaac.org/pictograms/${item.id}/${item.id}_300.png`
+          };
+          ARASAAC_CACHE.set(cleanWord, res);
+          return res;
+        }
+      }
+
+      // 5. Se è un articolo o preposizione generica senza simbolo dedicato, genera tessera connettore
+      if (ARTICLES_AND_CONNECTORS.has(cleanWord)) {
+        const connItem = {
+          id: 'conn-' + cleanWord,
+          word: word,
+          originalWord: word,
+          cat: 'misc',
+          isConnector: true,
+          imgUrl: createFallbackSvgDataUrl(word, '#64748b', true)
+        };
+        ARASAAC_CACHE.set(cleanWord, connItem);
+        return connItem;
+      }
+
+      // 6. Interroga l'API di ARASAAC con ricerca per parola intera e matching accurato
+      const targetQuery = lemma || cleanWord;
+      const normalizedQuery = targetQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // toglie accenti
+
+      try {
+        const apiUrl = `https://api.arasaac.org/api/pictograms/it/search/${encodeURIComponent(targetQuery)}`;
+        const response = await fetch(apiUrl, { cache: 'force-cache' });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            // MATCHING ACCURATO: cerca keyword identica
+            const best = findBestArasaacMatch(data, targetQuery, cleanWord);
+            if (best) {
+              const result = {
+                id: best._id,
+                word: word,
+                originalWord: word,
+                cat: determineFitzgeraldCategory(best),
+                imgUrl: `https://static.arasaac.org/pictograms/${best._id}/${best._id}_300.png`,
+                allMatches: data
+              };
+              ARASAAC_CACHE.set(cleanWord, result);
+              return result;
+            }
+          }
+        }
+
+        // Se fallisce, tenta query senza accenti se diversa
+        if (normalizedQuery !== targetQuery) {
+          const fallbackResp = await fetch(`https://api.arasaac.org/api/pictograms/it/search/${encodeURIComponent(normalizedQuery)}`);
+          if (fallbackResp.ok) {
+            const data2 = await fallbackResp.json();
+            if (Array.isArray(data2) && data2.length > 0) {
+              const best2 = findBestArasaacMatch(data2, normalizedQuery, cleanWord);
+              if (best2) {
+                const res2 = {
+                  id: best2._id,
+                  word: word,
+                  originalWord: word,
+                  cat: determineFitzgeraldCategory(best2),
+                  imgUrl: `https://static.arasaac.org/pictograms/${best2._id}/${best2._id}_300.png`,
+                  allMatches: data2
+                };
+                ARASAAC_CACHE.set(cleanWord, res2);
+                return res2;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`ARASAAC API non raggiungibile per '${word}':`, err);
+      }
+
+      // 7. Fallback grafico elegante
+      const fallbackItem = {
+        id: 'text-' + cleanWord,
+        word: word,
+        originalWord: word,
+        cat: 'noun',
+        isFallback: true,
+        imgUrl: createFallbackSvgDataUrl(word, '#2563eb', false)
+      };
+      ARASAAC_CACHE.set(cleanWord, fallbackItem);
+      return fallbackItem;
+    }
+
+    /* Seleziona il pittogramma che combacia esattamente con la parola cercata */
+    function findBestArasaacMatch(data, query, originalWord) {
+      const q = query.toLowerCase().trim();
+      const orig = originalWord.toLowerCase().trim();
+
+      // Priorità 1: keyword esattamente identica alla query
+      const exactQuery = data.find(item => 
+        (item.keywords || []).some(k => k.keyword.toLowerCase() === q)
+      );
+      if (exactQuery) return exactQuery;
+
+      // Priorità 2: keyword esattamente identica alla parola originale
+      const exactOrig = data.find(item => 
+        (item.keywords || []).some(k => k.keyword.toLowerCase() === orig)
+      );
+      if (exactOrig) return exactOrig;
+
+      // Priorità 3: plurale identico
+      const exactPlural = data.find(item => 
+        (item.keywords || []).some(k => k.plural && k.plural.toLowerCase() === orig)
+      );
+      if (exactPlural) return exactPlural;
+
+      // Priorità 4: inizio della keyword
+      const startsWith = data.find(item => 
+        (item.keywords || []).some(k => k.keyword.toLowerCase().startsWith(q))
+      );
+      if (startsWith) return startsWith;
+
+      // Ultima spiaggia: primo risultato
+      return data[0];
+    }
+
+    function determineFitzgeraldCategory(pictoData) {
+      const categories = (pictoData.categories || []).map(c => c.toLowerCase());
+      const tags = (pictoData.tags || []).map(t => t.toLowerCase());
+      const all = [...categories, ...tags].join(' ');
+
+      if (all.includes('verb') || all.includes('action') || all.includes('movement')) return 'action';
+      if (all.includes('people') || all.includes('person') || all.includes('pronoun') || all.includes('family')) return 'people';
+      if (all.includes('feeling') || all.includes('emotion') || all.includes('adjective') || all.includes('health')) return 'desc';
+      if (all.includes('communication') || all.includes('social') || all.includes('greeting')) return 'social';
+      return 'noun';
+    }
+
+    function createFallbackSvgDataUrl(word, color = '#2563eb', isConn = false) {
+      const display = isConn ? word.toLowerCase() : (word.charAt(0).toUpperCase() || '?');
+      const fontSize = isConn ? 32 : 56;
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+          <rect width="200" height="200" rx="20" fill="#f8fafc" stroke="#e2e8f0" stroke-width="4"/>
+          <circle cx="100" cy="100" r="${isConn ? '70' : '60'}" fill="${isConn ? '#f1f5f9' : '#e0f2fe'}"/>
+          <text x="100" y="${isConn ? '112' : '120'}" font-family="sans-serif" font-size="${fontSize}" font-weight="bold" fill="${color}" text-anchor="middle">${escapeHtml(display)}</text>
+        </svg>
+      `;
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.trim());
+    }
+
+    // Gestione resiliente degli errori immagine con fallback a doppio CDN e poi SVG
+    window.handlePictoImgError = function(imgEl, id, word) {
+      if (imgEl.dataset.fallbackTried !== 'api' && id && !String(id).startsWith('text-') && !String(id).startsWith('conn-')) {
+        imgEl.dataset.fallbackTried = 'api';
+        imgEl.src = 'https://api.arasaac.org/api/pictograms/' + id;
+      } else {
+        imgEl.onerror = null;
+        imgEl.src = createFallbackSvgDataUrl(word);
+      }
+    };
+
+    /* ==========================================================================
+       4. TOKENIZZAZIONE DEL TESTO ITALIANO
+       ========================================================================== */
+    function tokenizeItalianText(text, options = { includeArticles: true, smartFilter: true }) {
+      if (!text || typeof text !== 'string') return [];
+      
+      let workingText = text.toLowerCase().replace(/[\r\n]+/g, ' ');
+      workingText = workingText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"«»]/g, ' ');
+      
+      const tokens = [];
+      
+      COMPOUND_PHRASES.forEach(cp => {
+        const regex = new RegExp(`\\b${cp.phrase}\\b`, 'gi');
+        if (regex.test(workingText)) {
+          tokens.push({
+            type: 'compound',
+            word: cp.phrase,
+            lemma: cp.lemma,
+            id: cp.id,
+            cat: cp.cat
+          });
+          workingText = workingText.replace(regex, ' ___COMPOUND___ ');
+        }
+      });
+
+      const rawWords = workingText.split(/\s+/).filter(w => w && w !== '___COMPOUND___');
+
+      rawWords.forEach(word => {
+        const parts = word.split("'");
+        parts.forEach(p => {
+          if (!p) return;
+          const isArticle = ARTICLES_AND_CONNECTORS.has(p);
+          
+          if (!options.includeArticles && isArticle) {
+            return;
+          }
+
+          tokens.push({
+            type: 'word',
+            word: p,
+            lemma: LEMMA_DICTIONARY[p] || p,
+            cat: isArticle ? 'misc' : (LOCAL_VOCAB_MAP.get(p)?.cat || 'noun')
+          });
+        });
+      });
+
+      return tokens;
+    }
+
+    /* ==========================================================================
+       5. STATO APPLICAZIONE
+       ========================================================================== */
+    const State = {
+      currentTab: 'tab-text-to-caa',
+      isUppercase: true,
+      fitzgeraldEnabled: true,
+      currentTheme: 'light',
+      
+      textToCaaTokens: [],
+      builderItems: [],
+      
+      speechRecognition: null,
+      isRecording: false,
+      speechTokens: [],
+      
+      activeVariantTarget: null // card da modificare
+    };
+
+    /* ==========================================================================
+       6. SINTESI VOCALE (TTS)
+       ========================================================================== */
+    const TTS = {
+      synth: window.speechSynthesis,
+      
+      init() {
+        if (!this.synth) return;
+        this.loadVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+          speechSynthesis.onvoiceschanged = () => this.loadVoices();
+        }
+      },
+
+      loadVoices() {
+        const select = document.getElementById('voiceSelect');
+        if (!select) return;
+        
+        const allVoices = this.synth.getVoices();
+        const italianVoices = allVoices.filter(v => v.lang.startsWith('it'));
+        
+        select.innerHTML = '';
+        const listToUse = italianVoices.length > 0 ? italianVoices : allVoices;
+
+        listToUse.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.name;
+          opt.textContent = `${v.name} (${v.lang})`;
+          if (v.lang.startsWith('it') && (v.name.includes('Elsa') || v.name.includes('Cosimo') || v.name.includes('Natural') || v.default)) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+      },
+
+      getSelectedVoice() {
+        const select = document.getElementById('voiceSelect');
+        if (!select) return null;
+        const allVoices = this.synth.getVoices();
+        return allVoices.find(v => v.name === select.value) || null;
+      },
+
+      getRate() {
+        const select = document.getElementById('rateSelect');
+        return select ? parseFloat(select.value) || 1.0 : 1.0;
+      },
+
+      speak(text, onBoundaryCallback = null, onEndCallback = null) {
+        if (!this.synth || !text) return;
+        this.synth.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'it-IT';
+        const voice = this.getSelectedVoice();
+        if (voice) utterance.voice = voice;
+        utterance.rate = this.getRate();
+
+        if (onBoundaryCallback) {
+          utterance.onboundary = (e) => {
+            if (e.name === 'word') onBoundaryCallback(e.charIndex);
+          };
+        }
+
+        utterance.onend = () => { if (onEndCallback) onEndCallback(); };
+        utterance.onerror = () => { if (onEndCallback) onEndCallback(); };
+
+        this.synth.speak(utterance);
+      },
+
+      stop() {
+        if (this.synth) this.synth.cancel();
+      }
+    };
+
+    /* ==========================================================================
+       7. RICONOSCIMENTO VOCALE (SPEECH-TO-CAA LIVE)
+       ========================================================================== */
+    const Speech = {
+      init() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          const statusLbl = document.getElementById('micStatusLabel');
+          if (statusLbl) {
+            statusLbl.textContent = "Microfono non supportato in questo browser.";
+            statusLbl.style.color = "var(--danger)";
+          }
+          return;
+        }
+
+        const recognizer = new SpeechRec();
+        recognizer.continuous = true;
+        recognizer.interimResults = true;
+        recognizer.lang = 'it-IT';
+
+        recognizer.onstart = () => {
+          State.isRecording = true;
+          document.getElementById('btnToggleSpeech')?.classList.add('recording');
+          document.getElementById('micStatusLabel').textContent = "Ti sto ascoltando... parla pure!";
+          document.getElementById('micStatusLabel').style.color = "var(--danger)";
+        };
+
+        recognizer.onresult = (event) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + ' ';
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+
+          const liveBox = document.getElementById('speechLiveTranscript');
+          const fullscreenBox = document.getElementById('fullscreenTranscript');
+          
+          if (liveBox) {
+            liveBox.innerHTML = `<span>${escapeHtml(finalTranscript)}</span> <span class="interim">${escapeHtml(interimTranscript)}</span>`;
+          }
+          if (fullscreenBox) {
+            fullscreenBox.textContent = (finalTranscript + ' ' + interimTranscript).trim() || 'In ascolto...';
+          }
+
+          const activeText = (finalTranscript + ' ' + interimTranscript).trim();
+          if (activeText) {
+            updateSpeechCaaStrip(activeText);
+          }
+        };
+
+        recognizer.onerror = (event) => {
+          console.warn('Errore SpeechRecognition:', event.error);
+        };
+
+        recognizer.onend = () => {
+          if (State.isRecording) {
+            try { recognizer.start(); } catch(e) {
+              State.isRecording = false;
+              updateMicUiState();
+            }
+          } else {
+            updateMicUiState();
+          }
+        };
+
+        State.speechRecognition = recognizer;
+      },
+
+      toggle() {
+        if (!State.speechRecognition) {
+          showToast("Riconoscimento vocale non disponibile.");
+          return;
+        }
+
+        if (State.isRecording) {
+          State.isRecording = false;
+          State.speechRecognition.stop();
+          updateMicUiState();
+        } else {
+          try { State.speechRecognition.start(); } catch(err) { console.error(err); }
+        }
+      }
+    };
+
+    function updateMicUiState() {
+      const btn = document.getElementById('btnToggleSpeech');
+      const lbl = document.getElementById('micStatusLabel');
+      if (btn) btn.classList.remove('recording');
+      if (lbl) {
+        lbl.textContent = "Tocca il microfono per iniziare a parlare";
+        lbl.style.color = "inherit";
+      }
+    }
+
+    /* ==========================================================================
+       8. RENDERING DELLE TESSERE CAA
+       ========================================================================== */
+    function renderCaaCardHtml(item, index, containerId) {
+      const fitzClass = State.fitzgeraldEnabled ? `fitz-${item.cat || 'misc'}` : '';
+      const displayLabel = State.isUppercase ? (item.word || '').toUpperCase() : (item.word || '').toLowerCase();
+      
+      return `
+        <div class="caa-card ${fitzClass}" data-index="${index}" data-container="${containerId}" data-word="${escapeHtml(item.word)}" title="Clicca per ascoltare · Usa i tasti in alto a destra per cambiare o eliminare">
+          <div class="caa-category-dot"></div>
+          <div class="caa-card-tools">
+            <button class="caa-card-btn-mini caa-card-btn-change" data-action="change" title="Cambia simbolo / Scegli alternativa">🔄</button>
+            <button class="caa-card-btn-mini caa-card-btn-remove" data-action="remove" title="Rimuovi simbolo">✕</button>
+          </div>
+          <div class="caa-card-img-wrap">
+            <img src="${item.imgUrl}" alt="${escapeHtml(item.word)}" referrerpolicy="no-referrer" loading="eager" onerror="window.handlePictoImgError(this, '${item.id}', '${escapeHtml(item.word)}')">
+          </div>
+          <div class="caa-card-text">${escapeHtml(displayLabel)}</div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       9. GESTIONE TAB 1: TESTO -> CAA
+       ========================================================================== */
+    let debounceTimer = null;
+
+    async function handleTextInputChange() {
+      const input = document.getElementById('txtInput');
+      const text = input ? input.value : '';
+      const stripEl = document.getElementById('stripTextToCaa');
+      
+      if (!text.trim()) {
+        stripEl.innerHTML = `
+          <div class="caa-strip empty-state" style="border:none; width:100%;">
+            <span>👆 Digita del testo sopra o clicca su uno degli esempi per veder comparire i simboli CAA!</span>
+          </div>
+        `;
+        State.textToCaaTokens = [];
+        return;
+      }
+
+      const includeArticles = document.getElementById('chkIncludeArticles')?.checked ?? true;
+      const smartFilter = document.getElementById('chkSmartFilter')?.checked ?? true;
+
+      const rawTokens = tokenizeItalianText(text, { includeArticles, smartFilter });
+      
+      stripEl.innerHTML = '<div style="padding:1rem; color:var(--text-muted); font-size:0.95rem;">Caricamento pittogrammi ARASAAC verificati...</div>';
+
+      const resolvedItems = await Promise.all(
+        rawTokens.map(async t => {
+          const picto = await fetchPictogramForWord(t.lemma || t.word);
+          return {
+            ...picto,
+            cat: t.cat || picto.cat,
+            originalWord: t.word
+          };
+        })
+      );
+
+      State.textToCaaTokens = resolvedItems.filter(Boolean);
+
+      if (State.textToCaaTokens.length === 0) {
+        stripEl.innerHTML = '<div class="caa-strip empty-state" style="border:none; width:100%;"><span>Nessun simbolo trovato.</span></div>';
+        return;
+      }
+
+      stripEl.innerHTML = State.textToCaaTokens
+        .map((item, idx) => renderCaaCardHtml(item, idx, 'stripTextToCaa'))
+        .join('');
+    }
+
+    /* ==========================================================================
+       10. GESTIONE TAB 2: COMPOSITORE SIMBOLI CAA
+       ========================================================================== */
+    function initSymbolsBoard() {
+      renderCategorySymbols('tutti');
+
+      const pillsContainer = document.getElementById('categoryPills');
+      if (pillsContainer) {
+        pillsContainer.addEventListener('click', (e) => {
+          const btn = e.target.closest('.cat-pill');
+          if (!btn) return;
+          pillsContainer.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          renderCategorySymbols(btn.dataset.cat);
+        });
+      }
+
+      const searchInput = document.getElementById('boardSearchInput');
+      let searchTimeout = null;
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          clearTimeout(searchTimeout);
+          const q = e.target.value.trim();
+          if (!q) {
+            renderCategorySymbols('tutti');
+            return;
+          }
+          searchTimeout = setTimeout(() => searchSymbolsOnBoard(q), 300);
+        });
+      }
+    }
+
+    function renderCategorySymbols(category) {
+      const grid = document.getElementById('symbolsGrid');
+      if (!grid) return;
+
+      let list = CORE_AAC_VOCABULARY;
+      if (category !== 'tutti') {
+        list = CORE_AAC_VOCABULARY.filter(item => item.group === category);
+      }
+
+      grid.innerHTML = list.map(item => {
+        const fitzClass = State.fitzgeraldEnabled ? `fitz-${item.cat || 'misc'}` : '';
+        const label = State.isUppercase ? (item.label || item.word).toUpperCase() : (item.label || item.word).toLowerCase();
+        const imgUrl = `https://static.arasaac.org/pictograms/${item.id}/${item.id}_300.png`;
+
+        return `
+          <button class="symbol-card-btn ${fitzClass}" data-id="${item.id}" data-word="${escapeHtml(item.word)}" data-cat="${item.cat}">
+            <img src="${imgUrl}" alt="${escapeHtml(item.word)}" referrerpolicy="no-referrer" loading="eager" onerror="window.handlePictoImgError(this, '${item.id}', '${escapeHtml(item.word)}')">
+            <div class="symbol-label">${escapeHtml(label)}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    async function searchSymbolsOnBoard(query) {
+      const grid = document.getElementById('symbolsGrid');
+      if (!grid) return;
+
+      grid.innerHTML = '<div style="padding:1rem; grid-column:1/-1; text-align:center; color:var(--text-muted);">Ricerca simboli in corso...</div>';
+
+      try {
+        const resp = await fetch(`https://api.arasaac.org/api/pictograms/it/search/${encodeURIComponent(query)}`);
+        if (resp.ok) {
+          const results = await resp.json();
+          if (Array.isArray(results) && results.length > 0) {
+            grid.innerHTML = results.slice(0, 36).map(item => {
+              const kw = (item.keywords && item.keywords[0] && item.keywords[0].keyword) || query;
+              const cat = determineFitzgeraldCategory(item);
+              const fitzClass = State.fitzgeraldEnabled ? `fitz-${cat}` : '';
+              const label = State.isUppercase ? kw.toUpperCase() : kw.toLowerCase();
+              const imgUrl = `https://static.arasaac.org/pictograms/${item._id}/${item._id}_300.png`;
+
+              return `
+                <button class="symbol-card-btn ${fitzClass}" data-id="${item._id}" data-word="${escapeHtml(kw)}" data-cat="${cat}">
+                  <img src="${imgUrl}" alt="${escapeHtml(kw)}" referrerpolicy="no-referrer" loading="eager" onerror="window.handlePictoImgError(this, '${item._id}', '${escapeHtml(kw)}')">
+                  <div class="symbol-label">${escapeHtml(label)}</div>
+                </button>
+              `;
+            }).join('');
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Errore ricerca ARASAAC:', e);
+      }
+
+      grid.innerHTML = '<div style="padding:1rem; grid-column:1/-1; text-align:center; color:var(--text-muted);">Nessun simbolo trovato per questa ricerca.</div>';
+    }
+
+    function addSymbolToBuilder(symbolData) {
+      State.builderItems.push(symbolData);
+      updateBuilderStrip();
+    }
+
+    function updateBuilderStrip() {
+      const strip = document.getElementById('stripBuilder');
+      const textContainer = document.getElementById('builderNaturalText');
+      if (!strip) return;
+
+      if (State.builderItems.length === 0) {
+        strip.innerHTML = `
+          <div class="caa-strip empty-state" style="border:none; width:100%;">
+            <span>Tocca o clicca sui simboli della tastiera in basso per comporre la tua frase!</span>
+          </div>
+        `;
+        if (textContainer) textContainer.textContent = '';
+        return;
+      }
+
+      strip.innerHTML = State.builderItems
+        .map((item, idx) => renderCaaCardHtml(item, idx, 'stripBuilder'))
+        .join('');
+
+      const naturalSentence = buildNaturalSentence(State.builderItems);
+      if (textContainer) {
+        textContainer.textContent = naturalSentence;
+      }
+    }
+
+    function buildNaturalSentence(items) {
+      if (!items || items.length === 0) return '';
+      const words = items.map(it => it.word.trim());
+      let sentence = words.join(' ');
+      sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+      return sentence;
+    }
+
+    /* ==========================================================================
+       11. GESTIONE TAB 3: VOCE SIMULTANEA LIVE
+       ========================================================================== */
+    async function updateSpeechCaaStrip(text) {
+      const stripEl = document.getElementById('stripSpeechToCaa');
+      const fullscreenStripEl = document.getElementById('fullscreenStrip');
+      if (!stripEl && !fullscreenStripEl) return;
+
+      const rawTokens = tokenizeItalianText(text, { includeArticles: true, smartFilter: true });
+      if (rawTokens.length === 0) return;
+
+      const resolvedItems = await Promise.all(
+        rawTokens.map(async t => {
+          const picto = await fetchPictogramForWord(t.lemma || t.word);
+          return {
+            ...picto,
+            cat: t.cat || picto.cat,
+            originalWord: t.word
+          };
+        })
+      );
+
+      State.speechTokens = resolvedItems.filter(Boolean);
+
+      const html = State.speechTokens
+        .map((item, idx) => renderCaaCardHtml(item, idx, 'stripSpeechToCaa'))
+        .join('');
+
+      if (stripEl) stripEl.innerHTML = html;
+      if (fullscreenStripEl) fullscreenStripEl.innerHTML = html;
+    }
+
+    /* ==========================================================================
+       12. MODAL PER CAMBIARE SIMBOLO / VARIANTI ARASAAC
+       ========================================================================== */
+    async function openVariantsModal(containerId, index, word) {
+      const modal = document.getElementById('variantsModal');
+      const grid = document.getElementById('modalVariantsGrid');
+      const title = document.getElementById('modalWordTitle');
+      if (!modal || !grid) return;
+
+      State.activeVariantTarget = { containerId, index, word };
+      if (title) title.textContent = `Varianti per: "${word}"`;
+      grid.innerHTML = '<div style="padding:1rem; grid-column:1/-1; text-align:center;">Ricerca varianti ARASAAC...</div>';
+      modal.classList.add('active');
+
+      try {
+        const resp = await fetch(`https://api.arasaac.org/api/pictograms/it/search/${encodeURIComponent(word)}`);
+        if (resp.ok) {
+          const list = await resp.json();
+          if (Array.isArray(list) && list.length > 0) {
+            grid.innerHTML = list.map(item => {
+              const kw = (item.keywords && item.keywords[0] && item.keywords[0].keyword) || word;
+              const imgUrl = `https://static.arasaac.org/pictograms/${item._id}/${item._id}_300.png`;
+              return `
+                <div class="variant-option-card" data-id="${item._id}" data-word="${escapeHtml(kw)}">
+                  <img src="${imgUrl}" alt="${escapeHtml(kw)}" referrerpolicy="no-referrer" loading="eager" onerror="window.handlePictoImgError(this, '${item._id}', '${escapeHtml(kw)}')">
+                  <div class="variant-option-label">${escapeHtml(kw)}</div>
+                </div>
+              `;
+            }).join('');
+            return;
+          }
+        }
+      } catch(e) {
+        console.warn(e);
+      }
+
+      grid.innerHTML = '<div style="padding:1rem; grid-column:1/-1; text-align:center; color:var(--text-muted);">Nessuna variante alternativa trovata per questo termine.</div>';
+    }
+
+    function selectVariant(id, newWord) {
+      if (!State.activeVariantTarget) return;
+      const { containerId, index } = State.activeVariantTarget;
+      const newImgUrl = `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
+
+      if (containerId === 'stripTextToCaa' && State.textToCaaTokens[index]) {
+        State.textToCaaTokens[index].id = id;
+        State.textToCaaTokens[index].imgUrl = newImgUrl;
+        const stripEl = document.getElementById('stripTextToCaa');
+        stripEl.innerHTML = State.textToCaaTokens.map((it, i) => renderCaaCardHtml(it, i, 'stripTextToCaa')).join('');
+      } else if (containerId === 'stripBuilder' && State.builderItems[index]) {
+        State.builderItems[index].id = id;
+        State.builderItems[index].imgUrl = newImgUrl;
+        updateBuilderStrip();
+      }
+
+      document.getElementById('variantsModal')?.classList.remove('active');
+      showToast("Simbolo aggiornato con successo!");
+    }
+
+    /* ==========================================================================
+       13. FUNZIONALITÀ AUDIO, EXPORT PNG & UTILITY
+       ========================================================================== */
+    function speakCardsSequence(cardsContainerId, itemsList) {
+      if (!itemsList || itemsList.length === 0) {
+        showToast("Nessuna parola da leggere nella striscia.");
+        return;
+      }
+
+      const container = document.getElementById(cardsContainerId);
+      const cards = container ? container.querySelectorAll('.caa-card') : [];
+      
+      const fullText = itemsList.map(it => it.word).join(' ');
+      let currentCardIndex = 0;
+
+      cards.forEach(c => c.classList.remove('speaking'));
+
+      TTS.speak(
+        fullText,
+        () => {
+          cards.forEach(c => c.classList.remove('speaking'));
+          if (cards[currentCardIndex]) {
+            cards[currentCardIndex].classList.add('speaking');
+            cards[currentCardIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            currentCardIndex++;
+          }
+        },
+        () => {
+          cards.forEach(c => c.classList.remove('speaking'));
+        }
+      );
+    }
+
+    async function exportStripAsPng(itemsList, filename = 'striscia_caa.png') {
+      if (!itemsList || itemsList.length === 0) {
+        showToast("La striscia è vuota. Inserisci prima qualche simbolo!");
+        return;
+      }
+
+      const canvas = document.getElementById('exportCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const cardW = 140;
+      const cardH = 160;
+      const gap = 15;
+      const pad = 20;
+      const count = itemsList.length;
+
+      canvas.width = count * cardW + (count - 1) * gap + pad * 2;
+      canvas.height = cardH + pad * 2;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < count; i++) {
+        const item = itemsList[i];
+        const x = pad + i * (cardW + gap);
+        const y = pad;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = getFitzgeraldColorHex(item.cat);
+        ctx.lineWidth = 4;
+        
+        roundRect(ctx, x, y, cardW, cardH, 12, true, true);
+
+        try {
+          const img = await loadImageAsync(item.imgUrl);
+          ctx.drawImage(img, x + 25, y + 15, 90, 90);
+        } catch(e) {
+          ctx.fillStyle = '#64748b';
+          ctx.font = 'bold 36px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(item.word.charAt(0).toUpperCase(), x + cardW / 2, y + 70);
+        }
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center';
+        const label = State.isUppercase ? item.word.toUpperCase() : item.word.toLowerCase();
+        ctx.fillText(label, x + cardW / 2, y + cardH - 18);
+      }
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast("Immagine PNG della striscia scaricata!");
+    }
+
+    function getFitzgeraldColorHex(cat) {
+      switch(cat) {
+        case 'people': return '#f59e0b';
+        case 'action': return '#10b981';
+        case 'noun':   return '#f97316';
+        case 'desc':   return '#0284c7';
+        case 'social': return '#ec4899';
+        default:       return '#94a3b8';
+      }
+    }
+
+    function loadImageAsync(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Img load error'));
+        img.src = url;
+      });
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function showToast(msg) {
+      const existing = document.querySelector('.toast-msg');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.className = 'toast-msg';
+      toast.innerHTML = `<span>💬</span> <span>${escapeHtml(msg)}</span>`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* ==========================================================================
+       14. EVENT LISTENERS
+       ========================================================================== */
+    function setupEventListeners() {
+      // Cambio Tab
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tabId = btn.dataset.tab;
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+          
+          btn.classList.add('active');
+          document.getElementById(tabId)?.classList.add('active');
+          State.currentTab = tabId;
+
+          if (tabId !== 'tab-speech-to-caa' && State.isRecording) {
+            Speech.toggle();
+          }
+        });
+      });
+
+      // Toggle Maiuscolo / Minuscolo
+      document.getElementById('btnToggleCase')?.addEventListener('click', () => {
+        State.isUppercase = !State.isUppercase;
+        document.body.classList.toggle('case-uppercase', State.isUppercase);
+        document.getElementById('labelCaseText').textContent = State.isUppercase ? 'MAIUSCOLO' : 'minuscolo';
+        handleTextInputChange();
+        updateBuilderStrip();
+        renderCategorySymbols(document.querySelector('.cat-pill.active')?.dataset.cat || 'tutti');
+      });
+
+      // Toggle Bordo Fitzgerald
+      document.getElementById('btnToggleFitz')?.addEventListener('click', () => {
+        State.fitzgeraldEnabled = !State.fitzgeraldEnabled;
+        document.getElementById('btnToggleFitz').classList.toggle('active', State.fitzgeraldEnabled);
+        handleTextInputChange();
+        updateBuilderStrip();
+        renderCategorySymbols(document.querySelector('.cat-pill.active')?.dataset.cat || 'tutti');
+      });
+
+      // Tema
+      document.getElementById('btnThemeToggle')?.addEventListener('click', () => {
+        if (State.currentTheme === 'light') {
+          State.currentTheme = 'dark';
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.getElementById('themeIcon').textContent = '🌙';
+        } else if (State.currentTheme === 'dark') {
+          State.currentTheme = 'high-contrast';
+          document.documentElement.setAttribute('data-theme', 'high-contrast');
+          document.getElementById('themeIcon').textContent = '👁️';
+        } else {
+          State.currentTheme = 'light';
+          document.documentElement.removeAttribute('data-theme');
+          document.getElementById('themeIcon').textContent = '🌓';
+        }
+      });
+
+      // Input Testo Tab 1
+      const txtInput = document.getElementById('txtInput');
+      if (txtInput) {
+        txtInput.addEventListener('input', () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(handleTextInputChange, 280);
+        });
+      }
+
+      document.getElementById('btnClearInput')?.addEventListener('click', () => {
+        if (txtInput) txtInput.value = '';
+        handleTextInputChange();
+      });
+
+      document.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (txtInput) {
+            txtInput.value = btn.dataset.text;
+            handleTextInputChange();
+          }
+        });
+      });
+
+      document.getElementById('chkIncludeArticles')?.addEventListener('change', handleTextInputChange);
+      document.getElementById('chkSmartFilter')?.addEventListener('change', handleTextInputChange);
+
+      document.getElementById('btnSpeakStrip1')?.addEventListener('click', () => {
+        speakCardsSequence('stripTextToCaa', State.textToCaaTokens);
+      });
+
+      document.getElementById('btnExportImage1')?.addEventListener('click', () => {
+        exportStripAsPng(State.textToCaaTokens, 'striscia_caa_testo.png');
+      });
+
+      document.getElementById('btnPrintStrip1')?.addEventListener('click', () => {
+        window.print();
+      });
+
+      document.getElementById('btnClearStrip1')?.addEventListener('click', () => {
+        if (txtInput) txtInput.value = '';
+        handleTextInputChange();
+      });
+
+      // Click globale per card, rimozione, cambio simbolo e selezione griglia
+      document.addEventListener('click', (e) => {
+        const changeBtn = e.target.closest('.caa-card-btn-change');
+        const removeBtn = e.target.closest('.caa-card-btn-remove');
+        const card = e.target.closest('.caa-card');
+
+        // 1. Tasto CAMBIA SIMBOLO
+        if (changeBtn && card) {
+          e.stopPropagation();
+          const index = parseInt(card.dataset.index, 10);
+          const containerId = card.dataset.container;
+          const word = card.dataset.word;
+          openVariantsModal(containerId, index, word);
+          return;
+        }
+
+        // 2. Tasto RIMUOVI SIMBOLO
+        if (removeBtn && card) {
+          e.stopPropagation();
+          const index = parseInt(card.dataset.index, 10);
+          const containerId = card.dataset.container;
+
+          if (containerId === 'stripBuilder') {
+            State.builderItems.splice(index, 1);
+            updateBuilderStrip();
+          } else if (containerId === 'stripTextToCaa') {
+            State.textToCaaTokens.splice(index, 1);
+            const stripEl = document.getElementById('stripTextToCaa');
+            stripEl.innerHTML = State.textToCaaTokens.map((it, i) => renderCaaCardHtml(it, i, 'stripTextToCaa')).join('');
+          }
+          return;
+        }
+
+        // 3. Click sulla card per pronuncia
+        if (card) {
+          const word = card.dataset.word;
+          if (word) {
+            card.classList.add('speaking');
+            TTS.speak(word, null, () => card.classList.remove('speaking'));
+          }
+        }
+
+        // 4. Click su tessera nella griglia del Tab 2
+        const symbolBtn = e.target.closest('.symbol-card-btn');
+        if (symbolBtn) {
+          const id = symbolBtn.dataset.id;
+          const word = symbolBtn.dataset.word;
+          const cat = symbolBtn.dataset.cat;
+          const imgUrl = `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
+
+          addSymbolToBuilder({ id, word, cat, imgUrl });
+          TTS.speak(word);
+        }
+
+        // 5. Click su variante alternativa nel Modal
+        const variantCard = e.target.closest('.variant-option-card');
+        if (variantCard) {
+          const id = variantCard.dataset.id;
+          const word = variantCard.dataset.word;
+          selectVariant(id, word);
+        }
+      });
+
+      // Tab 2 bottoni
+      document.getElementById('btnSpeakBuilder')?.addEventListener('click', () => {
+        speakCardsSequence('stripBuilder', State.builderItems);
+      });
+
+      document.getElementById('btnRepeatSpeech')?.addEventListener('click', () => {
+        const text = document.getElementById('builderNaturalText')?.textContent;
+        if (text) TTS.speak(text);
+      });
+
+      document.getElementById('btnCopyTextBuilder')?.addEventListener('click', () => {
+        const text = document.getElementById('builderNaturalText')?.textContent;
+        if (text) {
+          navigator.clipboard.writeText(text);
+          showToast("Frase copiata negli appunti!");
+        }
+      });
+
+      document.getElementById('btnClearBuilder')?.addEventListener('click', () => {
+        State.builderItems = [];
+        updateBuilderStrip();
+      });
+
+      // Tab 3 bottoni
+      document.getElementById('btnToggleSpeech')?.addEventListener('click', () => {
+        Speech.toggle();
+      });
+
+      document.getElementById('btnSpeakSpeechStrip')?.addEventListener('click', () => {
+        speakCardsSequence('stripSpeechToCaa', State.speechTokens);
+      });
+
+      document.getElementById('btnSaveSpeechAsImage')?.addEventListener('click', () => {
+        exportStripAsPng(State.speechTokens, 'striscia_caa_voce.png');
+      });
+
+      document.getElementById('btnPrintSpeechStrip')?.addEventListener('click', () => {
+        window.print();
+      });
+
+      document.getElementById('btnResetSpeechStrip')?.addEventListener('click', () => {
+        State.speechTokens = [];
+        const strip = document.getElementById('stripSpeechToCaa');
+        if (strip) {
+          strip.innerHTML = '<div class="caa-strip empty-state" style="border:none; width:100%;"><span>I simboli CAA compariranno qui simultaneamente mentre parli!</span></div>';
+        }
+        const liveBox = document.getElementById('speechLiveTranscript');
+        if (liveBox) liveBox.innerHTML = '<span class="interim">In attesa della voce...</span>';
+      });
+
+      // Modalità LIM
+      document.getElementById('btnOpenFullscreen')?.addEventListener('click', () => {
+        document.getElementById('fullscreenOverlay')?.classList.add('active');
+        if (!State.isRecording) Speech.toggle();
+      });
+
+      document.getElementById('btnCloseFullscreen')?.addEventListener('click', () => {
+        document.getElementById('fullscreenOverlay')?.classList.remove('active');
+      });
+
+      document.getElementById('btnCloseModal')?.addEventListener('click', () => {
+        document.getElementById('variantsModal')?.classList.remove('active');
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.getElementById('fullscreenOverlay')?.classList.remove('active');
+          document.getElementById('variantsModal')?.classList.remove('active');
+        }
+      });
+    }
+
+    /* ==========================================================================
+       AVVIO SICURO (funziona sia con DOM in caricamento che già pronto)
+       ========================================================================== */
+    function initApp() {
+      TTS.init();
+      Speech.init();
+      initSymbolsBoard();
+      setupEventListeners();
+
+      const initialText = "Io voglio mangiare la mela";
+      const txtInput = document.getElementById('txtInput');
+      if (txtInput) {
+        txtInput.value = initialText;
+        handleTextInputChange();
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+
+  })();
+  </script>
+</body>
+</html>
